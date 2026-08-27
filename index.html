@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Ses Kayıtları</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      background-color: #000000;
+      color: #ffffff;
+      margin: 0;
+      padding: 16px;
+      padding-bottom: 140px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-top: 20px;
+    }
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin: 0;
+      letter-spacing: -0.5px;
+    }
+    .import-btn {
+      background-color: #1c1c1e;
+      color: #0a84ff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .recorder-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      background: #1c1c1e;
+      padding: 24px;
+      border-radius: 20px;
+    }
+    .record-btn-container {
+      width: 72px;
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .record-btn {
+      width: 60px;
+      height: 60px;
+      background-color: #ff3b30;
+      border-radius: 50%;
+      border: 4px solid #000;
+      outline: 2px solid #ff3b30;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .record-btn.recording {
+      border-radius: 8px;
+      width: 28px;
+      height: 28px;
+      outline-offset: 14px;
+    }
+    .timer {
+      font-size: 15px;
+      color: #8e8e93;
+      margin-top: 14px;
+      font-variant-numeric: tabular-nums;
+    }
+    .playlist-title {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      color: #8e8e93;
+      margin-bottom: 10px;
+      padding-left: 4px;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    li {
+      background-color: #1c1c1e;
+      margin-bottom: 10px;
+      padding: 16px;
+      border-radius: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid transparent;
+    }
+    li.active {
+      border-color: #0a84ff;
+      background-color: #2c2c2e;
+    }
+    .track-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .track-title {
+      font-size: 17px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .track-meta {
+      font-size: 13px;
+      color: #8e8e93;
+    }
+    .track-actions {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      margin-left: 12px;
+    }
+    .action-btn {
+      background: none;
+      border: none;
+      color: #0a84ff;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 0;
+    }
+    .action-btn.star {
+      color: #8e8e93;
+      font-size: xx-large;
+    }
+    .action-btn.star.starred {
+      color: #ffd60a;
+    }
+    .action-btn.delete {
+      color: #ff453a;
+    }
+    .player-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: #1c1c1e;
+      border-top: 0.5px solid #38383a;
+      padding: 16px;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.8);
+    }
+    .now-playing {
+      font-size: 14px;
+      font-weight: 600;
+      color: #0a84ff;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    audio {
+      width: 100%;
+      height: 40px;
+    }
+    input[type="file"] {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Kayıtlar</h1>
+    <button class="import-btn" onclick="document.getElementById('fileInput').click()">Dosya Aktar</button>
+    <input type="file" id="fileInput" accept="audio/*,video/mp4" multiple onchange="handleFileImport(event)">
+  </div>
+
+  <div class="recorder-section">
+    <div class="record-btn-container">
+      <div id="recordBtn" class="record-btn" onclick="toggleRecording()"></div>
+    </div>
+    <div id="timer" class="timer">00:00</div>
+  </div>
+
+  <div class="playlist-title">Çalma Listesi</div>
+  <ul id="playlist"></ul>
+
+  <div class="player-bar">
+    <div id="nowPlaying" class="now-playing">Seçilen kayıt yok</div>
+    <audio id="audioPlayer" controls playsinline></audio>
+  </div>
+
+  <script>
+    let db;
+    let mediaRecorder;
+    let audioChunks = [];
+    let isRecording = false;
+    let startTime;
+    let timerInterval;
+    let playlist = [];
+    let currentIndex = -1;
+
+    const recordBtn = document.getElementById('recordBtn');
+    const timerEl = document.getElementById('timer');
+    const playlistEl = document.getElementById('playlist');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const nowPlayingEl = document.getElementById('nowPlaying');
+
+    const request = indexedDB.open("VoiceRecorderDB_iOS_v2", 1);
+    request.onupgradeneeded = (e) => {
+      db = e.target.result;
+      if (!db.objectStoreNames.contains("recordings")) {
+        db.createObjectStore("recordings", { keyPath: "id", autoIncrement: true });
+      }
+    };
+    request.onsuccess = (e) => {
+      db = e.target.result;
+      loadPlaylist();
+    };
+
+    async function toggleRecording() {
+      if (!isRecording) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          let mimeType = 'audio/mp4';
+          if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'audio/webm';
+
+          mediaRecorder = new MediaRecorder(stream, { mimeType });
+          audioChunks = [];
+
+          mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+          mediaRecorder.onstop = saveRecording;
+
+          mediaRecorder.start();
+          isRecording = true;
+          recordBtn.classList.add('recording');
+          
+          startTime = Date.now();
+          timerInterval = setInterval(updateTimer, 1000);
+        } catch (err) {
+          alert("Mikrofon izni verilmeli.");
+        }
+      } else {
+        mediaRecorder.stop();
+        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        isRecording = false;
+        recordBtn.classList.remove('recording');
+        clearInterval(timerInterval);
+        timerEl.textContent = "00:00";
+      }
+    }
+
+    function updateTimer() {
+      const diff = Math.floor((Date.now() - startTime) / 1000);
+      const mins = String(Math.floor(diff / 60)).padStart(2, '0');
+      const secs = String(diff % 60).padStart(2, '0');
+      timerEl.textContent = `${mins}:${secs}`;
+    }
+
+    function saveRecording() {
+      const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+      const record = {
+        title: `Yeni Kayıt ${playlist.length + 1}`,
+        date: new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }),
+        blob: blob,
+        important: false
+      };
+
+      const tx = db.transaction("recordings", "readwrite");
+      tx.objectStore("recordings").add(record);
+      tx.oncomplete = () => loadPlaylist();
+    }
+
+    function handleFileImport(e) {
+      const files = e.target.files;
+      if (!files.length) return;
+
+      const tx = db.transaction("recordings", "readwrite");
+      const store = tx.objectStore("recordings");
+
+      Array.from(files).forEach(file => {
+        store.add({
+          title: file.name.replace(/\.[^/.]+$/, ""),
+          date: new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }),
+          blob: file,
+          important: false
+        });
+      });
+
+      tx.oncomplete = () => loadPlaylist();
+    }
+
+    function loadPlaylist() {
+      const tx = db.transaction("recordings", "readonly");
+      const req = tx.objectStore("recordings").getAll();
+
+      req.onsuccess = () => {
+        playlist = req.result;
+        renderPlaylist();
+      };
+    }
+
+    function renderPlaylist() {
+      playlistEl.innerHTML = '';
+      playlist.forEach((track, index) => {
+        const li = document.createElement('li');
+        if (index === currentIndex) li.classList.add('active');
+
+        li.innerHTML = `
+          <div class="track-info" onclick="playTrack(${index})">
+            <span class="track-title">
+              ${track.important ? '🔴' : ''} ${track.title}
+            </span>
+            <span class="track-meta">${track.date}</span>
+          </div>
+          <div class="track-actions">
+            <button class="action-btn star ${track.important ? 'starred' : ''}" onclick="toggleImportant(event, ${track.id}, ${track.important})">
+              ${track.important ? '★' : '☆'}
+            </button>
+            <button class="action-btn" onclick="exportFile(event, ${index})">İndir</button>
+            <button class="action-btn delete" onclick="deleteTrack(event, ${track.id})">Sil</button>
+          </div>
+        `;
+        playlistEl.appendChild(li);
+      });
+    }
+
+    function toggleImportant(e, id, currentStatus) {
+      e.stopPropagation();
+      const tx = db.transaction("recordings", "readwrite");
+      const store = tx.objectStore("recordings");
+      
+      const req = store.get(id);
+      req.onsuccess = () => {
+        const data = req.result;
+        data.important = !currentStatus;
+        store.put(data);
+      };
+      
+      tx.oncomplete = () => loadPlaylist();
+    }
+
+    function playTrack(index) {
+      if (index < 0 || index >= playlist.length) return;
+      currentIndex = index;
+      const track = playlist[index];
+      const url = URL.createObjectURL(track.blob);
+      
+      audioPlayer.src = url;
+      audioPlayer.play();
+      nowPlayingEl.textContent = `${track.important ? '🔴 ' : ''}${track.title}`;
+      renderPlaylist();
+    }
+
+    function exportFile(e, index) {
+      e.stopPropagation();
+      const track = playlist[index];
+      const url = URL.createObjectURL(track.blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${track.title}.m4a`;
+      a.click();
+    }
+
+    function deleteTrack(e, id) {
+      e.stopPropagation();
+      const tx = db.transaction("recordings", "readwrite");
+      tx.objectStore("recordings").delete(id);
+      tx.oncomplete = () => {
+        if (currentIndex >= playlist.length - 1) currentIndex = -1;
+        loadPlaylist();
+      };
+    }
+
+    audioPlayer.onended = () => {
+      if (currentIndex + 1 < playlist.length) {
+        playTrack(currentIndex + 1);
+      }
+    };
+  </script>
+</body>
+</html>
