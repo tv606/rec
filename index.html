@@ -140,9 +140,9 @@
     }
     .track-actions {
       display: flex;
-      gap: 10px;
+      gap: 18px;
       align-items: center;
-      margin-left: 8px;
+      margin-left: 12px;
     }
     .action-btn {
       background: none;
@@ -150,7 +150,7 @@
       color: #0a84ff;
       font-size: 14px;
       cursor: pointer;
-      padding: 0;
+      padding: 6px;
     }
     .action-btn.star {
       color: #8e8e93;
@@ -373,6 +373,8 @@
 
     function deleteTrack(e, id) {
       e.stopPropagation();
+      if (!confirm("Bu kaydı silmek istediğinize emin misiniz?")) return;
+      
       const tx = db.transaction("recordings", "readwrite");
       tx.objectStore("recordings").delete(id);
       tx.oncomplete = () => {
